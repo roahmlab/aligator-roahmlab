@@ -1,3 +1,5 @@
+# We fork Aligator at 14:20 07/24/2024 to compare its performance with [RAPTOR](https://github.com/roahmlab/RAPTOR)
+
 # Aligator
 
 <a href="https://simple-robotics.github.io/aligator/"><img src="https://img.shields.io/badge/docs-online-brightgreen" alt="Documentation"/></a>

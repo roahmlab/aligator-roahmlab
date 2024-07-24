@@ -217,6 +217,18 @@ def load_talos_no_wristhead():
     robot = erd.load("talos")
     qref = robot.model.referenceConfigurations["half_sitting"]
     locked_joints = [20, 21, 22, 23, 28, 29, 30, 31, 32, 33]
+    
+    red_bot = robot.buildReducedRobot(locked_joints, qref)
+    return robot, red_bot
+
+
+def load_talos_only_legs():
+    import example_robot_data as erd
+
+    robot = erd.load("talos")
+    qref = robot.model.referenceConfigurations["half_sitting"]
+    locked_joints = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+    
     red_bot = robot.buildReducedRobot(locked_joints, qref)
     return robot, red_bot
 
