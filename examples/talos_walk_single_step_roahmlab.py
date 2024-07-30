@@ -267,7 +267,7 @@ term_cost.addCost(aligator.QuadraticStateCost(space, nu, x0, 100 * w_x))
 T_ds = 20
 T_ss = 80
 swing_apex = 0.2
-step_length = 0.2
+step_length = 0.0
 
 def ztraj(swing_apex, t_ss, ts):
     return swing_apex * np.sin(ts / t_ss * np.pi)
@@ -300,7 +300,7 @@ for cp in contact_phases:
         RF_placements.append(RF_placement)
     if cp == "LEFT":
         RF_goal = RF_placement.copy()
-        current_x += 2.0 * step_length / T_ss
+        current_x += step_length / T_ss
         RF_goal.translation[0] = current_x
         RF_goal.translation[2] = ztraj(swing_apex, T_ss, ts)
         LF_placements.append(LF_placement)
@@ -320,8 +320,8 @@ problem = aligator.TrajOptProblem(x0, stages, term_cost)
 TOL = 1e-4
 mu_init = 1e-8
 rho_init = 0.0
-# verbose = aligator.VerboseLevel.VERBOSE
-verbose = aligator.VerboseLevel.QUIET
+verbose = aligator.VerboseLevel.VERBOSE
+# verbose = aligator.VerboseLevel.QUIET
 solver = aligator.SolverProxDDP(TOL, mu_init, rho_init, verbose=verbose)
 # solver = aligator.SolverFDDP(TOL, verbose=verbose)
 solver.rollout_type = aligator.ROLLOUT_LINEAR
@@ -358,18 +358,23 @@ us = results.us.tolist()
 qs = [x[:nq] for x in xs]
 vs = [x[nq:] for x in xs]
 
+control_energy = 0
+for u in us:
+    control_energy += np.sqrt(u.dot(u))
+control_energy = control_energy / len(us)
+
 # scipy.io.savemat("data/talos_walk_single_step_roahmlab_trajectory_" + str(args.max_iters) + ".mat", {"qs": qs, "vs": vs, "us": us})
 
-traj_cost = results.traj_cost
-prim_infeas = results.primal_infeas
-# scipy.io.savemat("data/talos_walk_single_step_roahmlab_result_" + str(args.max_iters) + ".mat", {"traj_cost": traj_cost, "prim_infeas": prim_infeas, "solve_time": solve_time})
-file_path = 'data/recorded_data.txt'
-if args.max_iters == 1:
-    with open(file_path, 'w') as file:
-        file.write("%d %f %f %f\n"%(args.max_iters, traj_cost, prim_infeas, solve_time))
-else:
-    with open(file_path, 'a') as file:
-        file.write("%d %f %f %f\n"%(args.max_iters, traj_cost, prim_infeas, solve_time))
+# traj_cost = results.traj_cost
+# prim_infeas = results.primal_infeas 
+# # scipy.io.savemat("data/talos_walk_single_step_roahmlab_result_" + str(args.max_iters) + ".mat", {"traj_cost": traj_cost, "prim_infeas": prim_infeas, "solve_time": solve_time})
+# file_path = 'data/recorded_data.txt'
+# if args.max_iters == 1:
+#     with open(file_path, 'w') as file:
+#         file.write("%d %f %f %f %f\n"%(args.max_iters, traj_cost, prim_infeas, solve_time, control_energy))
+# else:
+#     with open(file_path, 'a') as file:
+#         file.write("%d %f %f %f %f\n"%(args.max_iters, traj_cost, prim_infeas, solve_time, control_energy))
         
     
 
