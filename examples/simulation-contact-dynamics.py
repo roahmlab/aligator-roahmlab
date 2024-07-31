@@ -38,7 +38,7 @@ model, collision_model, visual_model = pin.buildModelsFromUrdf(
 # Note: the visualizer can also be opened seperately by visiting the provided URL.
 try:
     viz = MeshcatVisualizer(model, collision_model, visual_model)
-    viz.initViewer(open=False)
+    viz.initViewer(open=True)
 except ImportError as err:
     print(
         "Error while initializing the viewer. It seems you should install Python meshcat"
@@ -82,7 +82,7 @@ contact_dim = 6 * num_constraints
 pin.initConstraintDynamics(model, data_sim, contact_models)
 
 t = 0
-dt = 5e-3
+dt = 1e-3
 
 S = np.zeros((model.nv - 6, model.nv))
 S.T[6:, :] = np.eye(model.nv - 6)
@@ -96,7 +96,7 @@ tau = np.zeros((model.nv))
 T = 50
 
 while t <= T:
-    print("t:", t)
+    # print("t:", t)
     t += dt
 
     tic = time.time()
@@ -129,10 +129,10 @@ while t <= T:
     a = pin.constraintDynamics(
         model, data_sim, q, v, tau, contact_models, contact_datas, prox_settings
     )
-    print("a:", a.T)
-    print("v:", v.T)
-    print("constraint:", np.linalg.norm(J_constraint @ a))
-    print("iter:", prox_settings.iter)
+    # print("a:", a.T)
+    # print("v:", v.T)
+    # print("constraint:", np.linalg.norm(J_constraint @ a))
+    # print("iter:", prox_settings.iter)
 
     v += a * dt
     q = pin.integrate(model, q, v * dt)
@@ -140,5 +140,5 @@ while t <= T:
     viz.display(q)
     elapsed_time = time.time() - tic
 
-    time.sleep(max(0, dt - elapsed_time))
+    # time.sleep(max(0, dt - elapsed_time))
     # input()
