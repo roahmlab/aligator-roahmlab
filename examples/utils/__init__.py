@@ -58,6 +58,14 @@ def compute_quasistatic(model: pin.Model, data: pin.Data, x0, acc):
     v0 = x0[nq:]
     return pin.rnea(model, data, q0, v0, acc)
 
+# time derivative of a quaternion given angular velocity
+def derivQuat(q, v):
+    res = np.zeros(4)
+    res[0] = 0.5*(-v[0]*q[1] - v[1]*q[2] - v[2]*q[3])
+    res[1] = 0.5*( v[0]*q[0] + v[1]*q[3] - v[2]*q[2])
+    res[2] = 0.5*(-v[0]*q[3] + v[1]*q[0] + v[2]*q[1])
+    res[3] = 0.5*( v[0]*q[2] - v[1]*q[1] + v[2]*q[0])
+    return res
 
 def create_cartpole(N):
     import hppfcl as fcl

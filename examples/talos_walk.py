@@ -234,8 +234,10 @@ term_cost.addCost(aligator.QuadraticStateCost(space, nu, x0, 100 * w_x))
 """ term_cost.addCost(aligator.QuadraticResidualCost(space, frame_com, 100 * w_com)) """
 
 # Define contact phases and walk parameters
-T_ds = 20
-T_ss = 80
+T_ds = 0.2
+T_ss = 0.8
+N_ds = int(T_ds / dt)
+N_ss = int(T_ss / dt)
 swing_apex = 0.1
 
 
@@ -244,11 +246,11 @@ def ztraj(swing_apex, t_ss, ts):
 
 
 contact_phases = (
-    ["DOUBLE"] * T_ds
-    + ["LEFT"] * T_ss
-    + ["DOUBLE"] * T_ds
-    + ["RIGHT"] * T_ss
-    + ["DOUBLE"] * T_ds
+    ["DOUBLE"] * N_ds
+    + ["LEFT"] * N_ss
+    + ["DOUBLE"] * N_ds
+    + ["RIGHT"] * N_ss
+    + ["DOUBLE"] * N_ds
 )
 
 LF_placements = []
@@ -264,12 +266,12 @@ for cp in contact_phases:
         RF_placements.append(RF_placement)
     if cp == "RIGHT":
         LF_goal = LF_placement.copy()
-        LF_goal.translation[2] = ztraj(swing_apex, T_ss, ts)
+        LF_goal.translation[2] = ztraj(swing_apex, N_ss, ts)
         LF_placements.append(LF_goal)
         RF_placements.append(RF_placement)
     if cp == "LEFT":
         RF_goal = RF_placement.copy()
-        RF_goal.translation[2] = ztraj(swing_apex, T_ss, ts)
+        RF_goal.translation[2] = ztraj(swing_apex, N_ss, ts)
         LF_placements.append(LF_placement)
         RF_placements.append(RF_goal)
 

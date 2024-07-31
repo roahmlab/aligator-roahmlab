@@ -10,7 +10,7 @@ from aligator import (
     dynamics,
     constraints,
 )
-from utils import load_talos_no_wristhead, ArgsBase
+from utils import load_talos_no_wristhead, ArgsBase, derivQuat
 
 
 class Args(ArgsBase):
@@ -57,7 +57,7 @@ space = manifolds.MultibodyPhaseSpace(rmodel)
 
 x0 = np.concatenate((q0, np.zeros(nv)))
 u0 = np.zeros(nu)
-dt = 5e-4
+dt = 1e-3
 duration = 0.3
 
 act_matrix = np.eye(nv, nu, -6)
@@ -79,8 +79,10 @@ for fname, fid in FOOT_FRAME_IDS.items():
         pl2,
         pin.LOCAL_WORLD_ALIGNED,
     )
-    cm.corrector.Kp[:] = (200, 200, 200, 200, 200, 200)
-    cm.corrector.Kd[:] = (20, 20, 20, 20, 20, 20)
+    cm.corrector.Kp[:] = (0, 0, 100, 0, 0, 0)
+    cm.corrector.Kd[:] = (50, 50, 50, 50, 50, 50)
+    # cm.corrector.Kp[:] = (20, 20, 20, 20, 20, 20)
+    # cm.corrector.Kd[:] = (2, 2, 2, 2, 2, 2)
     constraint_models.append(cm)
     constraint_datas.append(cm.createData())
 
@@ -106,15 +108,6 @@ def create_dynamics(support):
 
 ode, dyn_model = create_dynamics("LEFT")
 
-# time derivative of a quaternion given angular velocity
-def derivQuat(q, v):
-    res = np.zeros(4)
-    res[0] = 0.5*(-v[0]*q[1] - v[1]*q[2] - v[2]*q[3])
-    res[1] = 0.5*( v[0]*q[0] + v[1]*q[3] - v[2]*q[2])
-    res[2] = 0.5*(-v[0]*q[3] + v[1]*q[0] + v[2]*q[1])
-    res[3] = 0.5*( v[0]*q[2] - v[1]*q[1] + v[2]*q[0])
-    return res
-
 def dyn(t, x, ode):
     d = ode.createData()
     u = np.zeros(nu)
@@ -125,6 +118,7 @@ def dyn(t, x, ode):
     # but since we are using scipy's solve_ivp, we have to do this trick
     # we normalize the quaternion to avoid numerical issues after solve_ivp
     # check https://github.com/google-deepmind/mujoco/blob/main/src/engine/engine_util_spatial.c#L243 
+    # or https://arxiv.org/abs/1711.02508 Eq 183
     # on how to integrate quaternion properly
     dx = np.zeros(nq + nv)
     dx[:3] = d.xdot[:3]
@@ -143,8 +137,7 @@ solution = solve_ivp(lambda t, x: dyn(t, x, ode),
 # normalize the quaternion in the solution
 for i in range(1, len(ts)):
     solution.y[3:7, i] /= np.linalg.norm(solution.y[3:7, i])
-
-print(solution.y.shape)
+    
 
 def fdisplay():
     qs = [x[:nq] for x in solution.y.T]
