@@ -1,26 +1,29 @@
-import numpy as np
-import aligator
-import pinocchio as pin
-import time
-import scipy.io
+# Below is modified from examples/ur5_reach.py
 
-from aligator import (
-    manifolds,
-    dynamics,
-    constraints,
-)
-from utils import load_talos_only_legs, ArgsBase, integrator_floatingbase_helper
+import aligator
+import numpy as np
+import time
+
+import pinocchio as pin
+import example_robot_data
+
+from aligator import constraints, manifolds, dynamics  # noqa
+from pinocchio.visualize import MeshcatVisualizer
+
+from utils import load_talos_no_wristhead, ArgsBase, integrator_floatingbase_helper
+
+import scipy.io
 
 
 class Args(ArgsBase):
     tcp: str = None
     bounds: bool = True
     num_threads: int = 8
-    max_iters: int = 200
+    control: bool = True
 
 
 args = Args().parse_args()
-robotComplete, robot = load_talos_only_legs()
+robotComplete, robot = load_talos_no_wristhead()
 rmodel: pin.Model = robot.model
 rdata: pin.Data = robot.data
 nq = rmodel.nq
@@ -28,6 +31,8 @@ nv = rmodel.nv
 nu = nv - 6
 print("nq:", nq)
 print("nv:", nv)
+
+print(args.control)
 
 if args.display:
     vizer = pin.visualize.MeshcatVisualizer(
@@ -49,61 +54,13 @@ controlled_ids = [
     robotComplete.model.getJointId(name_joint) for name_joint in controlled_joints[1:]
 ]
 q0 = rmodel.referenceConfigurations["half_sitting"]
-v0 = np.zeros(nv)
-
-# q0 = np.array(
-#     [
-#         -0.167777,
-#         -0.00143857,
-#         1.04461,
-#         0.025096255649710599161528179479319,
-#         0.00029357227751950908285760721838642,
-#         -0.010878593912774356736172798321149,
-#         0.99962580396974698437873030343326,
-#         0.0217575,
-#         -0.194412,
-#         -0.332625,
-#         0.141048,
-#         0.191535,
-#         0.144211,
-#         0.0217574,
-#         -0.196618,
-#         0.388312,
-#         -0.182366,
-#         -0.205988,
-#         0.146417
-#     ]
-# )
-# q0 = np.array(
-#     [
-#         -0.0689173,
-#         -0.0317775,
-#         1.07092,
-#         0.010948527018694632212403305970838, 
-#         -0.000046386116997883724893600443373032, 
-#         -0.0030930082910206970793487446513836,
-#         0.99993527835763484912234844159684, 
-#         0.00620187,
-#         -0.106981,
-#         -0.197428,
-#         0.155264,
-#         0.0423248,
-#         0.0850842,
-#         0.00620198,
-#         -0.107501,
-#         0.238134,
-#         -0.173242,
-#         -0.0647299,
-#         0.0856035
-#     ]
-# )
 
 pin.forwardKinematics(rmodel, rdata, q0)
 pin.updateFramePlacements(rmodel, rdata)
 
 space = manifolds.MultibodyPhaseSpace(rmodel)
 
-x0 = np.concatenate((q0, v0))
+x0 = np.concatenate((q0, np.zeros(nv)))
 u0 = np.zeros(nu)
 com0 = pin.centerOfMass(rmodel, rdata, x0[:nq])
 dt = 0.01
@@ -129,6 +86,16 @@ w_x = np.array(
         1,
         1,
         1,  # Right leg
+        1000,
+        1000,  # Torso
+        100,
+        100,
+        100,
+        100,  # Left arm
+        100,
+        100,
+        100,
+        100,  # Right arm
         100,
         100,
         100,
@@ -146,7 +113,17 @@ w_x = np.array(
         10,
         10,
         10,
-        10   # Right leg vel
+        10,  # Right leg vel
+        1000,
+        1000,  # Torso vel
+        10,
+        10,
+        10,
+        10,  # Left arm vel
+        10,
+        10,
+        10,
+        10,  # Right arm vel
     ]
 )
 w_x = np.diag(w_x)
@@ -269,7 +246,7 @@ T_ss = 0.8
 N_ds = int(T_ds / dt)
 N_ss = int(T_ss / dt)
 swing_apex = 0.1
-step_length = 0.0
+
 
 def ztraj(swing_apex, t_ss, ts):
     return swing_apex * np.sin(ts / t_ss * np.pi)
@@ -279,35 +256,33 @@ contact_phases = (
     ["DOUBLE"] * N_ds
     + ["LEFT"] * N_ss
     + ["DOUBLE"] * N_ds
+    + ["RIGHT"] * N_ss
+    + ["DOUBLE"] * N_ds
 )
 
 LF_placements = []
 RF_placements = []
 nsteps = len(contact_phases)
-current_x = RF_placement.translation[0]
 
 ts = 0
 for cp in contact_phases:
     ts += 1
     if cp == "DOUBLE":
         ts = 0
-        RF_goal = RF_placement.copy()
-        RF_goal.translation[0] = current_x
         LF_placements.append(LF_placement)
-        RF_placements.append(RF_goal)
-    # if cp == "RIGHT":
-    #     LF_goal = LF_placement.copy()
-    #     LF_goal.translation[2] = ztraj(swing_apex, N_ss, ts)
-    #     LF_placements.append(LF_goal)
-    #     RF_placements.append(RF_placement)
+        RF_placements.append(RF_placement)
+    if cp == "RIGHT":
+        LF_goal = LF_placement.copy()
+        LF_goal.translation[2] = ztraj(swing_apex, N_ss, ts)
+        LF_placements.append(LF_goal)
+        RF_placements.append(RF_placement)
     if cp == "LEFT":
         RF_goal = RF_placement.copy()
-        current_x += step_length / N_ss
-        RF_goal.translation[0] = current_x
         RF_goal.translation[2] = ztraj(swing_apex, N_ss, ts)
         LF_placements.append(LF_placement)
         RF_placements.append(RF_goal)
-        
+
+
 stages = [createStage(contact_phases[0], "DOUBLE", LF_placements[0], RF_placements[0])]
 for i in range(1, nsteps):
     stages.append(
@@ -321,13 +296,13 @@ problem = aligator.TrajOptProblem(x0, stages, term_cost)
 TOL = 1e-4
 mu_init = 1e-8
 rho_init = 0.0
+max_iters = 200
 verbose = aligator.VerboseLevel.VERBOSE
-# verbose = aligator.VerboseLevel.QUIET
 solver = aligator.SolverProxDDP(TOL, mu_init, rho_init, verbose=verbose)
 # solver = aligator.SolverFDDP(TOL, verbose=verbose)
 solver.rollout_type = aligator.ROLLOUT_LINEAR
 # solver = aligator.SolverFDDP(TOL, verbose=verbose)
-solver.max_iters = args.max_iters
+solver.max_iters = max_iters
 solver.sa_strategy = aligator.SA_FILTER  # FILTER or LINESEARCH
 solver.filter.beta = 1e-5
 solver.force_initial_condition = True
@@ -339,43 +314,17 @@ solver.setup(problem)
 us_init = [np.zeros(nu)] * nsteps
 xs_init = [x0] * (nsteps + 1)
 
-tic = time.time()
 solver.run(
     problem,
     xs_init,
     us_init,
 )
-toc = time.time()
-solve_time = toc - tic
-print("Elapsed time: ", solve_time)
 workspace = solver.workspace
 results = solver.results
 print(results)
 
-# save the results
 xs_opt = np.asarray(results.xs.tolist())
 us_opt = np.asarray(results.us.tolist())
-
-# qs = [x[:nq] for x in xs]
-# vs = [x[nq:] for x in xs]
-
-# control_energy = 0
-# for u in us:
-#     control_energy += np.sqrt(u.dot(u))
-# control_energy = control_energy / len(us)
-
-# scipy.io.savemat("data/talos_walk_single_step_roahmlab_trajectory_" + str(args.max_iters) + ".mat", {"qs": qs, "vs": vs, "us": us})
-
-# traj_cost = results.traj_cost
-# prim_infeas = results.primal_infeas 
-# # scipy.io.savemat("data/talos_walk_single_step_roahmlab_result_" + str(args.max_iters) + ".mat", {"traj_cost": traj_cost, "prim_infeas": prim_infeas, "solve_time": solve_time})
-# file_path = 'data/recorded_data.txt'
-# if args.max_iters == 1:
-#     with open(file_path, 'w') as file:
-#         file.write("%d %f %f %f %f\n"%(args.max_iters, traj_cost, prim_infeas, solve_time, control_energy))
-# else:
-#     with open(file_path, 'a') as file:
-#         file.write("%d %f %f %f %f\n"%(args.max_iters, traj_cost, prim_infeas, solve_time, control_energy))
 
 
 ## forward simulation with integrator_floatingbase_helper
@@ -390,33 +339,31 @@ xs_left = np.array(xs_opt[N_ds : N_ds + N_ss])
 us_left = np.array(us_opt[N_ds : N_ds + N_ss])
 x0 = xs_left[0]
 
-# evaluation of the optimal control solution from alligator
-Kp = np.diag(60.0 * np.ones(nv))
-Kd = np.diag(0.05 * np.sqrt(60.0) * np.ones(nv))
+if args.control:
+    # evaluation of the optimal control solution from alligator
+    Kp = np.diag(60.0 * np.ones(nv))
+    Kd = np.diag(0.05 * np.sqrt(60.0) * np.ones(nv))
+    
+    ts_sim, sol, us_sim, e_sim, edot_sim = integrator_floatingbase_helper.integrate(
+        rmodel, constraint_model_left, constraint_data_left,
+        0, T_ss, dt_sim, x0,
+        ts_left, xs_left, us_left, act_matrix,
+        Kp, Kd)
+    
+    scipy.io.savemat('data/talos_walk.mat', {'ts_sim': ts_sim, \
+                                             'sol': sol, \
+                                             'us_sim': us_sim, \
+                                             'e_sim': e_sim, \
+                                             'edot_sim': edot_sim})
+else:
+    # naive test without any control
+    ts_sim, sol, us_sim, e_sim, edot_sim = integrator_floatingbase_helper.integrate(
+        rmodel, constraint_model_left, constraint_data_left,
+        0, 0.3, dt_sim, x0)
 
-ts_sim, sol, us_sim, e_sim, edot_sim = integrator_floatingbase_helper.integrate(
-    rmodel, constraint_model_left, constraint_data_left,
-    0, T_ss, dt_sim, x0,
-    ts_left, xs_left, us_left, act_matrix,
-    Kp, Kd)
-
-scipy.io.savemat('data/talos_walk_single_step.mat', {'ts_sim': ts_sim, \
-                                                     'sol': sol, \
-                                                     'us_sim': us_sim, \
-                                                     'e_sim': e_sim, \
-                                                     'edot_sim': edot_sim})
-
-
-def fdisplay():
-    # qs = [x[:nq] for x in results.xs.tolist()]
-    qs = [x[:nq] for x in sol]
-
-    for _ in range(10):
-        vizer.play(qs, dt)
-        time.sleep(0.5)
-
+qs = [x[:nq] for x in sol]
 
 if args.display:
-    # vizer.setCameraPosition([1.2, 0.0, 1.2])
-    # vizer.setCameraTarget([0.0, 0.0, 1.0])
-    fdisplay()
+    for _ in range(5):
+        vizer.play(qs, dt_sim)
+        time.sleep(0.5)

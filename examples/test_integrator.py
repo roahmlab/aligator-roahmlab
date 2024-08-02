@@ -152,6 +152,7 @@ if args.control:
     ts_sim = np.arange(0, ts_opt[-1], dt_sim)
     Kp = np.diag(30.0 * np.ones(nq))
     Kd = 0.05 * np.sqrt(Kp)
+    
     sol, us_sim, e_sim, edot_sim = integrator_helper.integrate(rmodel, ts_sim, x0,
                                                                ts_opt, xs_opt, us_opt, B_mat,
                                                                Kp, Kd)

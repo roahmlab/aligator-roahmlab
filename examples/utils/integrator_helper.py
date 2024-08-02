@@ -55,13 +55,14 @@ def integrate(model, ts_sim, x0,
     position_errors = []
     velocity_errors = []
     
-    for i in range(len(ts_sim)):
-        t = ts_sim[i]
-        x = sol.y[:,i]
-        u, e, edot = control(t, x)
-        
-        controls.append(u)
-        position_errors.append(e)
-        velocity_errors.append(edot)
+    if ts is not None:
+        for i in range(len(ts_sim)):
+            t = ts_sim[i]
+            x = sol.y[:,i]
+            u, e, edot = control(t, x)
+            
+            controls.append(u)
+            position_errors.append(e)
+            velocity_errors.append(edot)
     
     return sol.y.T, controls, position_errors, velocity_errors
