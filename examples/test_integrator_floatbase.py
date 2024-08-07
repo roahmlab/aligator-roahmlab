@@ -340,7 +340,7 @@ us_left = np.array(us_opt[N_ds : N_ds + N_ss])
 x0 = xs_left[0]
 
 if args.control:
-    # evaluation of the optimal control solution from alligator
+    # evaluation of the optimal control solution from aligator
     Kp = np.diag(60.0 * np.ones(nv))
     Kd = np.diag(0.05 * np.sqrt(60.0) * np.ones(nv))
     

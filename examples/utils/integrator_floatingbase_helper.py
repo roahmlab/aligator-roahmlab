@@ -39,9 +39,16 @@ def integrate(model, constraint_model, constraint_data,
             u, _, _ = control(t, q, v)
             tau = act_matrix @ u
         
-        return pin.constraintDynamics(
+        a = pin.constraintDynamics(
             model, data_sim, q, v, tau, constraint_model, constraint_data, prox_settings
         )
+        
+        # print(t)
+        # for i, cd in enumerate(constraint_data):
+        #     print(i, cd.c1Mc2.translation.T)
+        # print(' ')
+        
+        return a
     
     t = t0
     q = x0[:nq]

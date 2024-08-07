@@ -96,7 +96,7 @@ viz.display(robot.q0)
 # robot.viewer.gui.setLightingMode("hpp-gui/floor", "OFF")
 
 # robot.display(robot.q0)
-viz.display(robot.q0)
+# viz.display(robot.q0)
 
 constraint_datas = [cm.createData() for cm in constraint_models]
 

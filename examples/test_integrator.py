@@ -147,7 +147,7 @@ us_opt = np.asarray(results.us.tolist())
 dt_sim = 1e-3
 
 if args.control:
-    # evaluation of the optimal control solution from alligator
+    # evaluation of the optimal control solution from aligator
     ts_opt = np.arange(0, Tf, dt)
     ts_sim = np.arange(0, ts_opt[-1], dt_sim)
     Kp = np.diag(30.0 * np.ones(nq))
