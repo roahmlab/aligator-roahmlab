@@ -218,7 +218,15 @@ def load_digit():
     robot = erd.load("digit")
     
     # a default configuration that robot stands on the ground
-    qref = np.array([0.35717257333012147890727305821201,
+    qref = np.array([-0.10346917108872191737312107306934,  # base pos/ori
+                     -0.031761005778095464935351088797688,
+                     1.038707489828431418388277052145,
+                     -0.018608935718442531220828684013213, 
+                     -0.0156606477603364706296940056518, 
+                     -0.70190069148516875952026339291479,
+                     0.71185944603959250276403736279462,
+                     
+                     0.35717257333012147890727305821201,   # left leg
                      0.0068511286518564409528386782710641,
                      0.34271261983060330447159458344686,
                      0.34511572263856526987524375726935,
@@ -233,7 +241,13 @@ def load_digit():
                      0.0095477647174991905204555209252248,
                      0.13558403581824002293032549459895,
                      -0.016019360666608344762051885368237,
-                     -0.35247716987640814734206173852726,
+                     
+                     -0.1506, # left arm
+                     1.0922,
+                     0,
+                     -0.1391,
+                     
+                     -0.35247716987640814734206173852726,  # right leg
                      0.027851543514003956891755819924583,
                      -0.34806008324315867996645579296455,
                      -0.3487028172112225377077265875414,
@@ -247,19 +261,37 @@ def load_digit():
                      0.13249000325343140982425893525942,
                      0.0091051145174328249748407770880476,
                      -0.14024561424612172477743854415166,
-                     0.029897477060648748603544078150662])
+                     0.029897477060648748603544078150662,
+                     
+                     0.1506, # right arm
+                     -1.0922,
+                     0,
+                     0.1391,])
     
-    # the corresponding base pose (xyz + quat)
-    baseref = np.array([-0.10346917108872191737312107306934,
-                        -0.031761005778095464935351088797688,
-                        1.038707489828431418388277052145,
-                        -0.018608935718442531220828684013213, 
-                        -0.0156606477603364706296940056518, 
-                        -0.70190069148516875952026339291479,
-                        0.71185944603959250276403736279462])
+    # left foot contact frame
+    robot.pl_leftfoot = pin.SE3.Identity()
+    robot.pl_leftfoot.rotation = np.array([[0, 1, 0], [-0.5, 0, np.sin(np.pi/3)], [np.sin(np.pi/3), 0, 0.5]])
+    robot.pl_leftfoot.translation = np.array([0, -0.05456, -0.0315])
+    robot.model.addFrame(pin.Frame('left_foot', robot.model.getJointId('left_toe_roll_joint'), 0, robot.pl_leftfoot, pin.FrameType.OP_FRAME))
     
-    return robot, qref, baseref
+    # right foot contact frame
+    robot.pl_rightfoot = pin.SE3.Identity()
+    robot.pl_rightfoot.rotation = np.array([[0, -1, 0], [0.5, 0, -np.sin(np.pi/3)], [np.sin(np.pi/3), 0, 0.5]])
+    robot.pl_rightfoot.translation = np.array([0, 0.05456, -0.0315])
+    robot.model.addFrame(pin.Frame('right_foot', robot.model.getJointId('right_toe_roll_joint'), 0, robot.pl_rightfoot, pin.FrameType.OP_FRAME))
+    
+    robot.data = robot.model.createData()
+    
+    return robot, qref
 
+
+def load_digit_only_legs():
+    robot, qref = load_digit()
+    locked_joints = [17, 18, 19, 20, 36, 37, 38, 39]
+    red_bot = robot.buildReducedRobot(locked_joints, qref)
+    qref = np.concatenate((qref[:22], qref[26:41]))
+    return red_bot, qref, robot.pl_leftfoot, robot.pl_rightfoot
+    
 
 def load_talos_upper_body():
     import example_robot_data as erd

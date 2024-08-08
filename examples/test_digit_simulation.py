@@ -15,14 +15,14 @@ from utils import load_digit, ArgsBase, integrator_floatingbase_helper
 import scipy.io
 
 
-robot, q0, base0 = load_digit()
+robot, qref = load_digit()
 rmodel: pin.Model = robot.model
 rdata: pin.Data = robot.data
 nq = rmodel.nq
 nv = rmodel.nv
 nu = nv - 6
 
-q0 = np.concatenate([base0, q0])
+q0 = qref
 v0 = np.zeros((nv))
 x0 = np.concatenate([q0, v0])
 
@@ -58,9 +58,9 @@ pl2.translation = np.array([0.0179, -0.009551, -0.054164])
 contact_model_ltA = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_3D,   
     rmodel,
-    rmodel.getJointId('left_A2'),
+    rmodel.getJointId('left_A2_joint'),
     pl1,
-    rmodel.getJointId('left_toe_roll'),
+    rmodel.getJointId('left_toe_roll_joint'),
     pl2,
 )
 contact_model_ltA.corrector.Kp[:] = (100, 100, 100)
@@ -75,9 +75,9 @@ pl2.translation = np.array([-0.0181, -0.009551, -0.054164])
 contact_model_ltB = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_3D,   
     rmodel,
-    rmodel.getJointId('left_B2'),
+    rmodel.getJointId('left_B2_joint'),
     pl1,
-    rmodel.getJointId('left_toe_roll'),
+    rmodel.getJointId('left_toe_roll_joint'),
     pl2,
 )
 contact_model_ltB.corrector.Kp[:] = (100, 100, 100)
@@ -100,9 +100,9 @@ pl2 = pl2_1 * pl2_2
 contact_model_lkt = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_3D,   
     rmodel,
-    rmodel.getJointId('left_ach2'),
+    rmodel.getJointId('left_ach2_joint'),
     pl1,
-    rmodel.getJointId('left_tarsus'),
+    rmodel.getJointId('left_tarsus_joint'),
     pl2,
 )
 contact_model_lkt.corrector.Kp[:] = (100, 100, 100)
@@ -117,9 +117,9 @@ pl2.translation = np.array([0.0179, 0.009551, -0.054164])
 contact_model_rtA = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_3D,   
     rmodel,
-    rmodel.getJointId('right_A2'),
+    rmodel.getJointId('right_A2_joint'),
     pl1,
-    rmodel.getJointId('right_toe_roll'),
+    rmodel.getJointId('right_toe_roll_joint'),
     pl2,
 )
 contact_model_rtA.corrector.Kp[:] = (100, 100, 100)
@@ -134,9 +134,9 @@ pl2.translation = np.array([-0.0181, 0.009551, -0.054164])
 contact_model_rtB = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_3D,   
     rmodel,
-    rmodel.getJointId('right_B2'),
+    rmodel.getJointId('right_B2_joint'),
     pl1,
-    rmodel.getJointId('right_toe_roll'),
+    rmodel.getJointId('right_toe_roll_joint'),
     pl2,
 )
 contact_model_rtB.corrector.Kp[:] = (100, 100, 100)
@@ -157,9 +157,9 @@ pl2 = pl2_1 * pl2_2
 contact_model_rkt = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_3D,   
     rmodel,
-    rmodel.getJointId('right_ach2'),
+    rmodel.getJointId('right_ach2_joint'),
     pl1,
-    rmodel.getJointId('right_tarsus'),
+    rmodel.getJointId('right_tarsus_joint'),
     pl2,
 )
 contact_model_rkt.corrector.Kp[:] = (100, 100, 100)
@@ -167,16 +167,13 @@ contact_model_rkt.corrector.Kd[:] = (10, 10, 10)
 constraint_models.extend([contact_model_rkt])
 
 # left foot contact
-pl1 = pin.SE3.Identity()
-pl1.rotation = np.array([[0, 1, 0], [-0.5, 0, np.sin(np.pi/3)], [np.sin(np.pi/3), 0, 0.5]])
-pl1.translation = np.array([0, -0.05456, -0.0315])
 contact_model_lfc = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_6D,   
     rmodel,
-    rmodel.getJointId('left_toe_roll'),
-    pl1,
+    rmodel.getJointId('left_toe_roll_joint'),
+    robot.pl_leftfoot,
     0,
-    rdata.oMi[rmodel.getJointId('left_toe_roll')] * pl1,
+    rdata.oMf[rmodel.getFrameId('left_foot')],
     pin.LOCAL_WORLD_ALIGNED
 )
 contact_model_lfc.corrector.Kp[:] = (0, 0, 100, 0, 0, 0)
@@ -184,16 +181,13 @@ contact_model_lfc.corrector.Kd[:] = (50, 50, 50, 50, 50, 50)
 constraint_models.extend([contact_model_lfc])
 
 # right foot contact
-pl1 = pin.SE3.Identity()
-pl1.rotation = np.array([[0, -1, 0], [0.5, 0, -np.sin(np.pi/3)], [np.sin(np.pi/3), 0, 0.5]])
-pl1.translation = np.array([0, 0.05456, -0.0315])
 contact_model_rfc = pin.RigidConstraintModel(
     pin.ContactType.CONTACT_6D,   
     rmodel,
-    rmodel.getJointId('right_toe_roll'),
-    pl1,
+    rmodel.getJointId('right_toe_roll_joint'),
+    robot.pl_rightfoot,
     0,
-    rdata.oMi[rmodel.getJointId('right_toe_roll')] * pl1,
+    rdata.oMf[rmodel.getFrameId('right_foot')],
     pin.LOCAL_WORLD_ALIGNED
 )
 contact_model_rfc.corrector.Kp[:] = (0, 0, 100, 0, 0, 0)
