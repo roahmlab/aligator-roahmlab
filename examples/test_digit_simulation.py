@@ -198,11 +198,6 @@ viz.display(q0)
 
 constraint_datas = [cm.createData() for cm in constraint_models]
 
-act_matrix = np.eye(nv, nu, -6)
-
-# Create dynamics and costs
-prox_settings = pin.ProximalSettings(1e-9, 1e-10, 10)
-
 # naive test without any control
 dt_sim = 5e-4
 ts_sim, sol, us_sim, e_sim, edot_sim = integrator_floatingbase_helper.integrate(

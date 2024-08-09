@@ -195,7 +195,7 @@ def createStage(support, prev_support, LF_target, RF_target):
         rcost.addCost(aligator.QuadraticResidualCost(space, frame_fn_LF, w_LFRF))
 
     stm = aligator.StageModel(rcost, create_dynamics(support))
-    umax = rmodel.effortLimit[6:]
+    umax = act_matrix.T @ rmodel.effortLimit
     umin = -umax
     if args.bounds:
         # print("Control bounds activated")

@@ -13,7 +13,7 @@ def integrate(model, constraint_model, constraint_data,
     nv = model.nv
     data_sim = model.createData()
     pin.initConstraintDynamics(model, data_sim, constraint_model)
-    prox_settings = pin.ProximalSettings(1e-12, 1e-12, 10)
+    prox_settings = pin.ProximalSettings(1e-12, 1e-12, 100)
     
     def control(t, q, v):
         u_openloop = interp1d(ts, us.T, kind=kind)(t)

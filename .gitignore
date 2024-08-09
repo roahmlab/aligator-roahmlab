@@ -9,3 +9,6 @@ build*/
 *.mp4
 *.mat
 *.txt
+
+.vscode/
+*.asv
