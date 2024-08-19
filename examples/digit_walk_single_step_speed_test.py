@@ -419,7 +419,7 @@ for iter in range(1, args.max_iters + 1):
     # solver = aligator.SolverFDDP(TOL, verbose=verbose)
     solver.rollout_type = aligator.ROLLOUT_LINEAR
     # solver = aligator.SolverFDDP(TOL, verbose=verbose)
-    solver.max_iters = args.max_iters
+    solver.max_iters = iter
     solver.sa_strategy = aligator.SA_FILTER  # FILTER or LINESEARCH
     solver.filter.beta = 1e-5
     solver.force_initial_condition = True
@@ -427,7 +427,6 @@ for iter in range(1, args.max_iters + 1):
     solver.linear_solver_choice = aligator.LQ_SOLVER_PARALLEL  # LQ_SOLVER_SERIAL
     solver.setNumThreads(args.num_threads)
     solver.setup(problem)
-    solver.max_iters = iter
     tic = time.time()
     solver.run(
         problem,

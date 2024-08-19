@@ -16,7 +16,7 @@ class Args(ArgsBase):
     tcp: str = None
     bounds: bool = True
     num_threads: int = 8
-    max_iters: int = 100
+    max_iters: int = 200
     step_length: float = 0.0
     dt: float = 0.01
 
@@ -275,97 +275,107 @@ problem = aligator.TrajOptProblem(x0, stages, term_cost)
 TOL = 1e-4
 mu_init = 1e-8
 rho_init = 0.0
-verbose = aligator.VerboseLevel.VERBOSE
-# verbose = aligator.VerboseLevel.QUIET
-solver = aligator.SolverProxDDP(TOL, mu_init, rho_init, verbose=verbose)
-# solver = aligator.SolverFDDP(TOL, verbose=verbose)
-solver.rollout_type = aligator.ROLLOUT_LINEAR
-# solver = aligator.SolverFDDP(TOL, verbose=verbose)
-solver.max_iters = args.max_iters
-solver.sa_strategy = aligator.SA_FILTER  # FILTER or LINESEARCH
-solver.filter.beta = 1e-5
-solver.force_initial_condition = True
-solver.reg_min = 1e-6
-solver.linear_solver_choice = aligator.LQ_SOLVER_PARALLEL  # LQ_SOLVER_SERIAL
-solver.setNumThreads(args.num_threads)
-solver.setup(problem)
+# verbose = aligator.VerboseLevel.VERBOSE
+verbose = aligator.VerboseLevel.QUIET
+solve_times = []
+infeas = []
+for iter in range(1, args.max_iters + 1):
+    print(iter)
+    solver = aligator.SolverProxDDP(TOL, mu_init, rho_init, verbose=verbose)
+    # solver = aligator.SolverFDDP(TOL, verbose=verbose)
+    solver.rollout_type = aligator.ROLLOUT_LINEAR
+    # solver = aligator.SolverFDDP(TOL, verbose=verbose)
+    solver.max_iters = iter
+    solver.sa_strategy = aligator.SA_FILTER  # FILTER or LINESEARCH
+    solver.filter.beta = 1e-5
+    solver.force_initial_condition = True
+    solver.reg_min = 1e-6
+    solver.linear_solver_choice = aligator.LQ_SOLVER_PARALLEL  # LQ_SOLVER_SERIAL
+    solver.setNumThreads(args.num_threads)
+    solver.setup(problem)
 
-us_init = [np.zeros(nu)] * nsteps
-xs_init = [x0] * (nsteps + 1)
+    us_init = [np.zeros(nu)] * nsteps
+    xs_init = [x0] * (nsteps + 1)
 
-tic = time.time()
-solver.run(
-    problem,
-    xs_init,
-    us_init,
-)
-toc = time.time()
-solve_time = toc - tic
-print("Elapsed time: ", solve_time)
-workspace = solver.workspace
-results = solver.results
-print(results)
+    tic = time.time()
+    solver.run(
+        problem,
+        xs_init,
+        us_init,
+    )
+    toc = time.time()
+    solve_time = toc - tic
+    # print("Elapsed time: ", solve_time)
+    workspace = solver.workspace
+    results = solver.results
+    # print(results)
+    solve_times.extend([solve_time])
+    infeas.extend([results.primal_infeas])
+    
+print(args.step_length, args.dt)
+scipy.io.savemat('data/talos_walk_single_step_speed_test_' + str(args.step_length) + '_' + str(args.dt) + '.mat', 
+                 {'solve_times': solve_times, 'infeas': infeas})
 
-# save the results
-xs_opt = np.asarray(results.xs.tolist())
-us_opt = np.asarray(results.us.tolist())
+# # save the results
+# xs_opt = np.asarray(results.xs.tolist())
+# us_opt = np.asarray(results.us.tolist())
 
-## forward simulation with integrator_floatingbase_helper
-dt_sim = 5e-4
+# ## forward simulation with integrator_floatingbase_helper
+# dt_sim = 5e-4
 
-# note that we only focus on the first left support stage
-constraint_model_left = [constraint_models[0]]
-constraint_data_left = [constraint_datas[0]]
+# # note that we only focus on the first left support stage
+# constraint_model_left = [constraint_models[0]]
+# constraint_data_left = [constraint_datas[0]]
 
-ts_left = np.linspace(0, T_ss, N_ss)
-xs_left = np.array(xs_opt[N_ds : N_ds + N_ss])
-us_left = np.array(us_opt[N_ds : N_ds + N_ss])
-x0 = xs_left[0]
+# ts_left = np.linspace(0, T_ss, N_ss)
+# xs_left = np.array(xs_opt[N_ds : N_ds + N_ss])
+# us_left = np.array(us_opt[N_ds : N_ds + N_ss])
+# x0 = xs_left[0]
 
-# evaluation of the optimal control solution from aligator
-Kp = np.diag(60.0 * np.ones(nv))
-# Kd = np.diag(0.05 * np.sqrt(60.0) * np.ones(nv))
-Kd = np.diag(5.0 * np.ones(nv))
+# # evaluation of the optimal control solution from aligator
+# Kp = np.diag(60.0 * np.ones(nv))
+# # Kd = np.diag(0.05 * np.sqrt(60.0) * np.ones(nv))
+# Kd = np.diag(5.0 * np.ones(nv))
 
-ts_sim, sol, us_sim, e_sim, edot_sim = integrator_floatingbase_helper.integrate(
-    rmodel, constraint_model_left, constraint_data_left,
-    0, T_ss, dt_sim, x0,
-    ts_left, xs_left, us_left, act_matrix,
-    Kp, Kd)
+# ts_sim, sol, us_sim, e_sim, edot_sim = integrator_floatingbase_helper.integrate(
+#     rmodel, constraint_model_left, constraint_data_left,
+#     0, T_ss, dt_sim, x0,
+#     ts_left, xs_left, us_left, act_matrix,
+#     Kp, Kd)
 
-pin.forwardKinematics(rmodel, rdata, xs_opt[-1][:nq])
-pin.updateFramePlacements(rmodel, rdata)
-RF_placement = rdata.oMf[RF_id]
-step_length_opt = RF_placement.translation[0] - RF_placements[0].translation[0]
-pin.forwardKinematics(rmodel, rdata, sol[-1][:nq])
-pin.updateFramePlacements(rmodel, rdata)
-RF_placement = rdata.oMf[RF_id]
-step_length_sim = RF_placement.translation[0] - RF_placements[0].translation[0]
-print(step_length_opt, step_length_sim)
+# pin.forwardKinematics(rmodel, rdata, xs_opt[-1][:nq])
+# pin.updateFramePlacements(rmodel, rdata)
+# RF_placement = rdata.oMf[RF_id]
+# step_length_opt = RF_placement.translation[0] - RF_placements[0].translation[0]
+# pin.forwardKinematics(rmodel, rdata, sol[-1][:nq])
+# pin.updateFramePlacements(rmodel, rdata)
+# RF_placement = rdata.oMf[RF_id]
+# step_length_sim = RF_placement.translation[0] - RF_placements[0].translation[0]
+# print(step_length_opt, step_length_sim)
 
-result_filename = 'data/talos_walk_single_step_aligator_' + str(args.step_length) + '_' + str(args.dt) + '.mat'
-scipy.io.savemat(result_filename, {'ts_sim': ts_sim, \
-                                   'sol': sol, \
-                                   'us_sim': us_sim, \
-                                   'e_sim': e_sim, \
-                                   'edot_sim': edot_sim, \
-                                   'step_length_sim': step_length_sim, \
-                                   'xs_opt': xs_left, \
-                                   'us_opt': us_left, \
-                                   'step_length_opt': step_length_opt, \
-                                   'solve_time': solve_time})
-
-
-def fdisplay():
-    # qs = [x[:nq] for x in results.xs.tolist()]
-    qs = [x[:nq] for x in sol]
-
-    for _ in range(5):
-        vizer.play(qs, dt)
-        time.sleep(0.5)
+# result_filename = 'data/talos_walk_single_step_aligator_' + str(args.step_length) + '_' + str(args.dt) + '.mat'
+# scipy.io.savemat(result_filename, {'ts_sim': ts_sim, \
+#                                    'sol': sol, \
+#                                    'us_sim': us_sim, \
+#                                    'e_sim': e_sim, \
+#                                    'edot_sim': edot_sim, \
+#                                    'step_length_sim': step_length_sim, \
+#                                    'xs_opt': xs_left, \
+#                                    'us_opt': us_left, \
+#                                    'step_length_opt': step_length_opt, \
+#                                    'solve_time': solve_time})
 
 
-if args.display:
-    # vizer.setCameraPosition([1.2, 0.0, 1.2])
-    # vizer.setCameraTarget([0.0, 0.0, 1.0])
-    fdisplay()
+# def fdisplay():
+#     # qs = [x[:nq] for x in results.xs.tolist()]
+#     qs = [x[:nq] for x in sol]
+
+#     for _ in range(5):
+#         vizer.play(qs, dt)
+#         time.sleep(0.5)
+
+
+# if args.display:
+#     # vizer.setCameraPosition([1.2, 0.0, 1.2])
+#     # vizer.setCameraTarget([0.0, 0.0, 1.0])
+#     fdisplay()
