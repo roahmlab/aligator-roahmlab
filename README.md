@@ -1,5 +1,43 @@
 # We fork Aligator at 14:20 07/24/2024 to compare its performance with [RAPTOR](https://github.com/roahmlab/RAPTOR)
 
+## Summary of Changes
+We only performed changes or added scripts in `examples/` folder.
+
+Changes:
+- `utils/integrator_helper.py`: A wrapper of using `scipy.solve_ivp` to forward integrate the system dynamics.
+- `utils/integrator_floatingbase_helper.py`: Forward integrate the system dynamics for robots with floating base using naive explicit Euler method. `pinocchio` uses quaternion to represent the orientation, which can not be simply integrated as system states and plugged into `scipy.solve_ivp`. The integration rule needs to be handled separately. We simply deploy a naive Euler method here.
+- `utils/__init__.py`: Add functions to load Digit-v3 and Talos with fixed arm joints.
+
+Newly added:
+- `test_integrator.py`: test script for `utils/integrator_helper.py`.
+- `test_integrator_floatbase.py`: test script for `utils/integrator_floatingbase_helper.py`.
+- `simulation-closed-kinematic-chains.py`: original `pinocchio` [examples](https://github.com/stack-of-tasks/pinocchio/blob/master/examples/simulation-closed-kinematic-chains.py).
+- `simulation-contact-dynamics.py`: original `pinocchio` [examples](https://github.com/stack-of-tasks/pinocchio/blob/master/examples/simulation-contact-dynamics.py).
+- `talos-simulation.py`: original `pinocchio` [examples](https://github.com/stack-of-tasks/pinocchio/blob/master/examples/talos-simulation.py).
+- `test_digit_simulation.py`: test script for dynamics simulation of Digit-v3. We want to test if we implement the closed-loop chain constraints and the contact constraint properly on Digit-v3.
+- `digit_walk_single_step.py`: Solve for trajectories of Digit walking forward for one step starting from a fixed configuration. Run the following command to reproduce the results:
+- `digit_walk_single_step_speed_test.py`: Test script to collect data: constraint violation vs. computation time
+- `talos_walk_single_step.py`: Solve for trajectories of Talos walking forward for one step starting from a fixed configuration. Run the following command to reproduce the results:
+- `talos_walk_single_step_speed_test.py`: Test script to collect data: constraint violation vs. computation time
+
+## To Rerun the Experiment
+
+To load Digit, which is a robot not included in `pinocchio`'s official examples, please refer to our [fork](https://github.com/roahmlab/example-robot-data-roahmlab) on [example-robot-data](https://github.com/Gepetto/example-robot-data).
+We have included corresponding instructions on how to load Digit.
+
+In `examples/` folder, run the following command:
+
+```bash
+python3 digit_walk_single_step.py --step_length=0.0 --dt=0.01
+```
+
+```bash
+python3 talos_walk_single_step.py --step_length=0.0 --dt=0.01
+```
+
+`step_length` argument represents the length of robot stepping forward.
+`dt` argument represents the time discretization of the MPC.
+
 # Aligator
 
 <a href="https://simple-robotics.github.io/aligator/"><img src="https://img.shields.io/badge/docs-online-brightgreen" alt="Documentation"/></a>
