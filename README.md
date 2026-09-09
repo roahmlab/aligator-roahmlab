@@ -14,6 +14,27 @@ Developing advanced, open-source, and versatile robotics software such as **alig
 In recognition of our commitment, we would be grateful if you would quote our papers and software in your publications, software, and research articles.
 Please refer to the [Citation section](#citing-aligator) for further details.
 
+## Table of contents
+
+- [Aligator](#aligator)
+   * [Features](#features)
+   * [Installation](#installation)
+      + [From Conda](#from-conda)
+      + [From source with Pixi](#from-source-with-pixi)
+      + [Build from source](#build-from-source)
+         - [Dependencies](#dependencies)
+         - [Python dependencies](#python-dependencies)
+      + [Notes on building](#notes-on-building)
+   * [Usage](#usage)
+      + [Aligator parallel & CPU optimizations](#aligator-parallel--cpu-optimizations)
+   * [Benchmarking](#benchmarking)
+   * [Citing aligator](#citing-aligator)
+   * [Contribution](#contribution)
+   * [Core-dev team](#core-dev-team)
+   * [Credits](#credits)
+   * [Acknowledgments](#acknowledgments)
+   * [Associated scientific and technical publications](#associated-scientific-and-technical-publications)
+
 ## Features
 
 **Aligator** is a C++ library, which provides
@@ -136,26 +157,40 @@ Please also consider citing the reference paper for the ProxDDP algorithm:
 }
 ```
 
-## Contributors
+## Contribution
+
+If you want to ask a question, report a bug, request a new feature or contributing with a pull requests please, follow the [contribution guideline](./development/contributing.md).
+
+## Core-dev team
+
+The currently active core developers of **Aligator** are:
+
+* [Justin Carpentier](https://jcarpent.github.io/) (Inria): project instructor
+* [Guilhem Saurel](https://github.com/nim65s) (LAAS-CNRS): core maintainer
+* Sarah Kazdadi (Inria): linear algebra czar
+* [Fabian Schramm](https://github.com/fabinsch) (Inria): core developer
+* [Joris Vaillant](https://github.com/jorisv) (Inria): core developer
+* [Jeanne Matheron](https://github.com/j-matheron) (Inria): core developer
+* [Louise Manson](https://github.com/LouiseMsn) (Inria): documentation
+
+## Credits
+
+In addition to the core dev team, the following people have also been involved in the development of **Aligator** and are warmly thanked for their contributions:
 
 * [Antoine Bambade](https://bambade.github.io/) (Inria): mathematics and algorithms developer
-* [Justin Carpentier](https://jcarpent.github.io/) (Inria): project instructor
 * [Wilson Jallet](https://manifoldfr.github.io/) (Inria): project lead and principal developer
-* [Sarah Kazdadi](https://github.com/sarah-ek/) (Inria): linear algebra czar
 * [Quentin Le Lidec](https://quentinll.github.io/) (Inria): feature developer
-* [Joris Vaillant](https://github.com/jorisv) (Inria): core developer
 * [Nicolas Mansard](https://gepettoweb.laas.fr/index.php/Members/NicolasMansard) (LAAS-CNRS): project coordinator
-* [Guilhem Saurel](https://github.com/nim65s) (LAAS-CNRS): core maintainer
-* [Fabian Schramm](https://github.com/fabinsch) (Inria): core developer
 * [Ludovic De Matteïs](https://github.com/LudovicDeMatteis) (LAAS-CNRS): feature developer
 * [Ewen Dantec](https://edantec.github.io/) (Inria): feature developer
 * [Antoine Bussy](https://github.com/antoine-bussy) (Aldebaran)
 * [Valentin Tordjman--Levavasseur](https://github.com/Tordjx) (Inria): feature developer
-* [Louise Manson](https://github.com/LouiseMsn) (Inria): documentation
+
+If you have participated in the development of **Aligator**, please add your name and contribution to this list.
 
 ## Acknowledgments
 
-The development of **aligator** is actively supported by the [Willow team](https://www.di.ens.fr/willow/) [@INRIA](http://www.inria.fr) and the [Gepetto team](http://projects.laas.fr/gepetto/) [@LAAS-CNRS](http://www.laas.fr).
+The development of **Aligator** is actively supported by the [Willow team](https://www.di.ens.fr/willow/) [@INRIA](http://www.inria.fr) and the [Gepetto team](http://projects.laas.fr/gepetto/) [@LAAS-CNRS](http://www.laas.fr).
 
 ## Associated scientific and technical publications
 
