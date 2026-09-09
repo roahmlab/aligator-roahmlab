@@ -171,7 +171,6 @@ The currently active core developers of **Aligator** are:
 * [Fabian Schramm](https://github.com/fabinsch) (Inria): core developer
 * [Joris Vaillant](https://github.com/jorisv) (Inria): core developer
 * [Jeanne Matheron](https://github.com/j-matheron) (Inria): core developer
-* [Fabian Schramm](https://github.com/fabinsch) (Inria): core developer
 * [Louise Manson](https://github.com/LouiseMsn) (Inria): documentation
 
 ## Credits
